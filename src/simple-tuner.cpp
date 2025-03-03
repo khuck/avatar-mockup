@@ -289,46 +289,6 @@ public:
     }
 };
 
-/* this class helps us with nested contexts. We don't want to
- * stop searching a higher level branch until all of the subtrees
- * have also converged - the global optimum might be at the bottom
- * of a branch with many options, but we won't get there if we
- * have found local minimum in a simpler branch. */
-class TreeNode {
-    static std::map<std::string,TreeNode*> allContexts;
-public:
-    TreeNode(std::string _name) :
-        name(_name), _hasConverged(false) {}
-    static TreeNode* find(std::string name, TreeNode* parent) {
-        auto node = allContexts.find(name);
-        if (node == allContexts.end()) {
-            TreeNode *tmp = new TreeNode(name);
-            if (parent != nullptr) {
-                parent->children.insert(tmp);
-            }
-            allContexts.insert(std::pair<std::string, TreeNode*>(name,tmp));
-            return tmp;
-        }
-        return node->second;
-    }
-    std::string name;
-    std::set<TreeNode*> children;
-    bool _hasConverged;
-    bool haveChildren(void) {
-        return (children.size() > 0);
-    }
-    bool childrenConverged(void) {
-        // yes children? have they all converged?
-        for (auto child : children) {
-            if (!child->childrenConverged()) { return false; }
-            if (!child->_hasConverged) { return false; }
-        }
-        return true;
-    }
-};
-
-std::map<std::string,TreeNode*> TreeNode::allContexts;
-
 /* Have to make a deep copy of the variable to use it at exit */
 void Variable::deepCopy(Kokkos_Tools_VariableInfo& _info) {
     info.type = _info.type;
