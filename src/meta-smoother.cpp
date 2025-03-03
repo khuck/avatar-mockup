@@ -17,9 +17,9 @@ namespace metasmoother {
     std::vector<KTE::VariableValue> makeChebychevVariables() {
         // output variable ids
         size_t out_variables[3];
-        out_variables[0] = declareOutputRange<int64_t>("C: Chebyshev Degree", 1, 6, 1);
-        out_variables[1] = declareOutputContinuous("C: Eigenvalue Ratio", 10.0, 50.0, 0.1, false, false);
-        out_variables[2] = declareOutputRange<int64_t>("C: Maximum Chebychev Iterations", 5, 100, 1);
+        out_variables[0] = declareOutputRange<int64_t>("Chebyshev: Degree", 1, 6, 1);
+        out_variables[1] = declareOutputContinuous("Chebyshev: Eigenvalue Ratio", 10.0, 50.0, 0.1, false, false);
+        out_variables[2] = declareOutputRange<int64_t>("Chebychev: Maximum Iterations", 5, 100, 1);
         //The second argument to make_varaible_value might be a default value
         std::vector<KTE::VariableValue> answer_vector{
             KTE::make_variable_value(out_variables[0], int64_t(3)),
@@ -62,8 +62,8 @@ namespace metasmoother {
     std::vector<KTE::VariableValue> makeMultiThreadedGaussSeidelVariables() {
         // output variable ids
         size_t out_variables[3];
-        out_variables[0] = declareOutputRange<int64_t>("MTGS: Number of Sweeps", 1, 2, 1);
-        out_variables[1] = declareOutputContinuous("MTGS: Damping Factor", 0.8, 1.2, 0.01, false, false);
+        out_variables[0] = declareOutputRange<int64_t>("Multi-threaded Gauss-Seidel: Number of Sweeps", 1, 2, 1);
+        out_variables[1] = declareOutputContinuous("Multi-threaded Gauss-Seidel: Damping Factor", 0.8, 1.2, 0.01, false, false);
         //The second argument to make_varaible_value might be a default value
         std::vector<KTE::VariableValue> answer_vector{
             KTE::make_variable_value(out_variables[0], int64_t(2)),
@@ -104,8 +104,8 @@ namespace metasmoother {
     std::vector<KTE::VariableValue> makeTwoStageGaussSeidelVariables() {
         // output variable ids
         size_t out_variables[3];
-        out_variables[0] = declareOutputRange<int64_t>("TSGS: Number of Sweeps", 1, 2, 1);
-        out_variables[1] = declareOutputContinuous("TSGS: Inner Damping Factor", 0.8, 1.2, 0.01, false, false);
+        out_variables[0] = declareOutputRange<int64_t>("Two-Stage Gauss-Seidel: Number of Sweeps", 1, 2, 1);
+        out_variables[1] = declareOutputContinuous("Two-Stage Gauss-Seidel: Inner Damping Factor", 0.8, 1.2, 0.01, false, false);
         //The second argument to make_varaible_value might be a default value
         std::vector<KTE::VariableValue> answer_vector{
             KTE::make_variable_value(out_variables[0], int64_t(2)),
@@ -157,13 +157,13 @@ int main(int argc, char *argv[]) {
             );
         }
     }
-    std::cout << "\nC: Chebyshev Degree target value: 5" << std::endl;
-    std::cout << "C: Eigenvalue Ratio target value: 15" << std::endl;
-    std::cout << "C: Maximum Chebychev Iterations target value: 75" << std::endl;
-    std::cout << "MTGS: Number of Sweeps target value: 1" << std::endl;
-    std::cout << "MTGS: Damping Factor target value: 0.9" << std::endl;
-    std::cout << "TSGS: Number of Sweeps target value: 2" << std::endl;
-    std::cout << "TSGS: Inner Damping Factor target value: 1.1\n" << std::endl;
+    std::cout << "\nChebyshev: Degree target value: 5" << std::endl;
+    std::cout << "Chebyshev: Eigenvalue Ratio target value: 15" << std::endl;
+    std::cout << "Chebychev: Maximum Iterations target value: 75" << std::endl;
+    std::cout << "Multi-threaded Gauss-Seidel: Number of Sweeps target value: 1" << std::endl;
+    std::cout << "Multi-threaded Gauss-Seidel: Damping Factor target value: 0.9" << std::endl;
+    std::cout << "Two-Stage Gauss-Seidel: Number of Sweeps target value: 2" << std::endl;
+    std::cout << "Two-Stage Gauss-Seidel: Inner Damping Factor target value: 1.1\n" << std::endl;
     Kokkos::finalize();
     
 }

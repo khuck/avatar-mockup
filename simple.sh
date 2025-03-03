@@ -1,6 +1,6 @@
 # Build:
 
-export Kokkos_ROOT=$HOME/src/albany/apex-kokkos-tuning/install
+export Kokkos_ROOT=$HOME/src/albany/trilinos-install
 cmake -DCMAKE_PREFIX_PATH=$Kokkos_ROOT -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel
 
