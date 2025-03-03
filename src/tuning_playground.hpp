@@ -91,11 +91,15 @@ size_t create_fastest_implementation_id(const size_t count){
     info.category = StatisticalCategory::kokkos_value_categorical;
     info.type = ValueType::kokkos_value_int64;
     info.valueQuantity = CandidateValueType::kokkos_value_unbounded;
-    id = declare_input_type("playground.fastest_implementation_of", info);
+    id = declare_input_type("fastest_implementation_of", info);
   }
   return id;
 }
 
+/* fastest_of - A convenience function
+   This function will take a name for the input variable, the number of implementations to test,
+   and a variable argument list of implementations to test.
+   */
 template<typename ... Implementations>
 void fastest_of(const std::string& label, const size_t count, Implementations... implementations){
     using namespace Kokkos::Tools::Experimental;
@@ -109,7 +113,7 @@ void fastest_of(const std::string& label, const size_t count, Implementations...
     }();
     auto var_id = tuner_iter->second;
     auto input_id = create_fastest_implementation_id(count);
-    VariableValue picked_implementation = make_variable_value(var_id,int64_t(0));
+    VariableValue picked_implementation = make_variable_value(input_id,int64_t(0));
     VariableValue which_kernel = make_variable_value(var_id,label.c_str());
     which_kernel.value.int_value = -1;
     auto context_id = get_new_context_id();

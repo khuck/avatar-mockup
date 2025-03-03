@@ -48,6 +48,7 @@ namespace metasmoother {
         // get the settings...
         KTE::request_output_values(context, answer_vector.size(), answer_vector.data());
 
+        /* "run" the smoother. */
         // try to converge on 5, 15, 75
         size_t delay = 1 + (std::abs(5 - answer_vector[0].value.int_value) * 750) +
                            (std::abs(15.0 - answer_vector[1].value.double_value) * 25) +
@@ -90,6 +91,7 @@ namespace metasmoother {
         // get the settings...
         KTE::request_output_values(context, answer_vector.size(), answer_vector.data());
 
+        /* "run" the smoother. */
         // try to converge on 1, 0.9
         size_t delay = 1 + (std::abs(1 - answer_vector[0].value.int_value) * 100) +
                            (std::abs(0.9 - answer_vector[1].value.double_value) * 100);
@@ -131,7 +133,7 @@ namespace metasmoother {
         // get the settings...
         KTE::request_output_values(context, answer_vector.size(), answer_vector.data());
 
-        // call the real solver
+        /* "run" the smoother. */
         // try to converge on 2, 1.1
         size_t delay = 1 + (std::abs(2 - answer_vector[0].value.int_value) * 100) +
                            (std::abs(1.1 - answer_vector[1].value.double_value) * 100);
