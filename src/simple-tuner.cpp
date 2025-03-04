@@ -24,6 +24,7 @@
 #include <set>
 #include <map>
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <stdlib.h>
 #include <Kokkos_Core.hpp>
@@ -35,27 +36,25 @@
 #define __FUNCTION__ __func__
 #endif
 
-class void_stream : public std::ostream {};
-void_stream voidstream;
-
 bool getVerbose() {
     char * tmp = getenv("KOKKOS_VERBOSE");
     if (tmp == nullptr) { return false; }
     return true;
 }
 
-std::ostream &log()
-{
-    static bool verbose{getVerbose()};
-    if (verbose)
-    {
-        return std::cout;
+class void_stream { 
+public:
+    std::ostream& operator()(void) {
+        static bool verbose{getVerbose()};
+        static std::ofstream devNull("/dev/null");
+        if (verbose) {
+            return std::cout;
+        }
+        return devNull;
     }
-    else
-    {
-        return voidstream;
-    }
-}
+};
+
+void_stream mylog;
 
 std::string pVT(Kokkos_Tools_VariableInfo_ValueType t) {
     if (t == kokkos_value_double) {
@@ -240,21 +239,21 @@ public:
     bool output;
     void assignNewValue(struct Kokkos_Tools_VariableValue& var) {
         // what kind is it?
-        log() << "Setting " << name << " to ";
+        mylog() << "Setting " << name << " to ";
         if (var.metadata->type == kokkos_value_double) {
             var.value.double_value = newRandomDouble();
             lastValue.double_value = var.value.double_value;
-            log() << var.value.double_value << std::endl;
+            mylog() << var.value.double_value << std::endl;
         }
         else if (var.metadata->type == kokkos_value_int64) {
             var.value.int_value = newRandomInt();
             lastValue.int_value = var.value.int_value;
-            log() << var.value.int_value << std::endl;
+            mylog() << var.value.int_value << std::endl;
         }
         else /* if (var.metadata->type == kokkos_value_string) */ {
             strncpy(var.value.string_value, newRandomString().c_str(), KOKKOS_TOOLS_TUNING_STRING_LENGTH);
             strncpy(lastValue.string_value, var.value.string_value, KOKKOS_TOOLS_TUNING_STRING_LENGTH);
-            log() << var.value.string_value << std::endl;
+            mylog() << var.value.string_value << std::endl;
         }
     }
     int64_t newRandomInt(void) {
@@ -401,7 +400,7 @@ Variable::Variable(size_t _id, std::string _name,
         hashValue = std::to_string(hasher(name));
     /*
     if (KokkosSession::getSession().verbose) {
-        log() << toString();
+        mylog() << toString();
     }
     */
     best_time = INT_MAX;
@@ -567,9 +566,9 @@ extern "C" {
  */
 void kokkosp_declare_output_type(const char* name, const size_t id,
     Kokkos_Tools_VariableInfo& info) {
-    log() << __FUNCTION__ << " " << name << std::endl;
+    mylog() << __FUNCTION__ << " " << name << std::endl;
     Variable * output = new Variable(id, name, info);
-    log() << output->toString() << std::endl;
+    mylog() << output->toString() << std::endl;
     output->makeSpace();
     variables[id] = output;
     return;
@@ -583,9 +582,9 @@ void kokkosp_declare_output_type(const char* name, const size_t id,
  */
 void kokkosp_declare_input_type(const char* name, const size_t id,
     Kokkos_Tools_VariableInfo& info) {
-    log() << __FUNCTION__ << " " << name << std::endl;
+    mylog() << __FUNCTION__ << " " << name << std::endl;
     Variable * input = new Variable(id, name, info, false);
-    log() << input->toString() << std::endl;
+    mylog() << input->toString() << std::endl;
     variables[id] = input;
 }
 
@@ -594,7 +593,7 @@ void kokkosp_declare_input_type(const char* name, const size_t id,
  * starting measurement.
  */
 void kokkosp_begin_context(size_t contextId) {
-    log() << __FUNCTION__ << "\t" << contextId << std::endl;
+    mylog() << __FUNCTION__ << "\t" << contextId << std::endl;
     contexts[contextId] = new Context(contextId);
 }
 
@@ -627,17 +626,17 @@ void kokkosp_request_values(
     // get the context
     auto iter = contexts.find(contextId);
     auto context = iter->second;
-    log() << __FUNCTION__ << "\ncontext id: " << contextId << std::endl;
-    log() << numContextVariables << " input variables with ids: ";
+    mylog() << __FUNCTION__ << "\ncontext id: " << contextId << std::endl;
+    mylog() << numContextVariables << " input variables with ids: ";
     for (auto i = 0 ; i < numContextVariables ; i++ ) {
-        log() << contextVariableValues[i].type_id << " ";
+        mylog() << contextVariableValues[i].type_id << " ";
     }
     context->addInputVariables(numContextVariables, contextVariableValues);
-    log() << "\n" << numTuningVariables << " output variables with ids: ";
+    mylog() << "\n" << numTuningVariables << " output variables with ids: ";
     for (auto i = 0 ; i < numTuningVariables ; i++ ) {
-        log() << tuningVariableValues[i].type_id << " ";
+        mylog() << tuningVariableValues[i].type_id << " ";
     }
-    log() << "\n" << std::endl;
+    mylog() << "\n" << std::endl;
     context->addOutputVariables(numTuningVariables, tuningVariableValues);
     context->start();
 }
@@ -647,7 +646,7 @@ void kokkosp_request_values(
  * values can now be associated with a result.
  */
 void kokkosp_end_context(const size_t contextId) {
-    log() << __FUNCTION__ << "\t" << contextId << std::endl;
+    mylog() << __FUNCTION__ << "\t" << contextId << std::endl;
     auto iter = contexts.find(contextId);
     auto context = iter->second;
     context->stop();
@@ -663,14 +662,14 @@ void kokkosp_end_context(const size_t contextId) {
  */
 void kokkosp_init_library(const int, const uint64_t, const uint32_t,
     struct Kokkos_Profiling_KokkosPDeviceInfo*) {
-    log() << __FUNCTION__ << std::endl;
+    mylog() << __FUNCTION__ << std::endl;
 }
 
 /* This function will be called only once, after all other calls to
  * profiling hooks.
  */
 void kokkosp_finalize_library() {
-    log() << __FUNCTION__ << std::endl;
+    mylog() << __FUNCTION__ << std::endl;
     for (const auto& k : variables) {
         auto v = k.second;
         v->reportBest();
