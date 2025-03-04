@@ -662,7 +662,7 @@ void kokkosp_end_context(const size_t contextId) {
  */
 void kokkosp_init_library(const int, const uint64_t, const uint32_t,
     struct Kokkos_Profiling_KokkosPDeviceInfo*) {
-    mylog() << __FUNCTION__ << std::endl;
+    //mylog() << __FUNCTION__ << std::endl;
 }
 
 /* This function will be called only once, after all other calls to
