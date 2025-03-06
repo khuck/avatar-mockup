@@ -17,5 +17,6 @@ elif [ -f ./build/src/libsimple-tuner.dylib ] ; then
     export KOKKOS_TOOLS_LIBS=./build/src/libsimple-tuner.dylib
 fi
 
-./build/src/meta-smoother
+#./build/src/meta-smoother
+./build/src/meta-smoother-discrete
 

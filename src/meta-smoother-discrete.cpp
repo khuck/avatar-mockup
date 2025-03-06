@@ -35,11 +35,8 @@ namespace metasmoother {
         return answer_vector;
     }
 
-    void doChebyshev(void) {
+    size_t setupChebyshev(size_t context) {
         Kokkos::Profiling::ScopedRegion region("Chebyshev");
-        // create a context
-        size_t context{KTE::get_new_context_id()};
-        KTE::begin_context(context);
 
         // set the input values for the context - these two are always on the stack,
         // we are just setting the context properties for the search. Enough to make it unique.
@@ -61,11 +58,8 @@ namespace metasmoother {
         size_t delay = 1 + (std::abs(5 - answer_vector[0].value.int_value) * 750) +
                            (std::abs(15.0 - answer_vector[1].value.double_value) * 25) +
                            (std::abs(75 - answer_vector[2].value.int_value) * 10);
-        // call the real solver - not really
-        std::this_thread::sleep_for(std::chrono::microseconds(delay));
-        // end the context - this will end timings for the context, and set the response value for this
-        // context with those properties and those suggested values.
-        KTE::end_context(context);
+        // return the delay
+        return delay;
     }
 
     std::vector<KTE::VariableValue> makeMultiThreadedGaussSeidelVariables() {
@@ -84,11 +78,8 @@ namespace metasmoother {
         return answer_vector;
     }
 
-    void MultiThreadedGaussSeidel(void) {
+    size_t setupMultiThreadedGaussSeidel(size_t context) {
         Kokkos::Profiling::ScopedRegion region("Multi-threaded Gauss-Seidel");
-        // create a context
-        size_t context{KTE::get_new_context_id()};
-        KTE::begin_context(context);
 
         // set the input values for the context - these two are always on the stack,
         // we are just setting the context properties for the search. Enough to make it unique.
@@ -109,11 +100,8 @@ namespace metasmoother {
         // try to converge on 1, 0.9
         size_t delay = 1 + (std::abs(1 - answer_vector[0].value.int_value) * 100) +
                            (std::abs(0.9 - answer_vector[1].value.double_value) * 100);
-        // call the real solver - not really
-        std::this_thread::sleep_for(std::chrono::microseconds(delay));
-        // end the context - this will end timings for the context, and set the response value for this
-        // context with those properties and those suggested values.
-        KTE::end_context(context);
+        // return the delay
+        return delay;
     }
 
     std::vector<KTE::VariableValue> makeTwoStageGaussSeidelVariables() {
@@ -132,11 +120,8 @@ namespace metasmoother {
         return answer_vector;
     }
 
-    void TwoStageGaussSeidel(void) {
+    size_t setupTwoStageGaussSeidel(size_t context) {
         Kokkos::Profiling::ScopedRegion region("Two-Stage Gauss-Seidel");
-        // create a context
-        size_t context{KTE::get_new_context_id()};
-        KTE::begin_context(context);
 
         // set the input values for the context - these two are always on the stack,
         // we are just setting the context properties for the search. Enough to make it unique.
@@ -157,19 +142,16 @@ namespace metasmoother {
         // try to converge on 2, 1.1
         size_t delay = 1 + (std::abs(2 - answer_vector[0].value.int_value) * 100) +
                            (std::abs(1.1 - answer_vector[1].value.double_value) * 100);
-        // call the real solver - not really
-        std::this_thread::sleep_for(std::chrono::microseconds(delay));
-        // end the context - this will end timings for the context, and set the response value for this
-        // context with those properties and those suggested values.
-        KTE::end_context(context);
+        // return the delay
+        return delay;
     }
 };
 
 int main(int argc, char *argv[]) {
 
+    /* Report the "target" values - keeping in mind that the random search doesn't really converge */
     std::string target(80, '-');
     std::cout << "\nTarget values:\n" << target << std::endl;
-    /* Report the "target" values - keeping in mind that the random search doesn't really converge */
     std::cout << "Chebyshev: Degree target value: 5" << std::endl;
     std::cout << "Chebyshev: Eigenvalue Ratio target value: 15" << std::endl;
     std::cout << "Chebychev: Maximum Iterations target value: 75" << std::endl;
@@ -181,20 +163,85 @@ int main(int argc, char *argv[]) {
 
     Kokkos::initialize(argc, argv);
     /* 
-     * This implementation uses the helper function fastest_of()
+     * This implementation uses explicit function calls to set up the search.
      */
     {
         std::string banner(80, '=');
-        std::cout << "fastest_of() method:\n" << banner << std::endl;
-        Kokkos::Profiling::ScopedRegion region("meta smoother search loop");
+        std::cout << banner << "\nExplicit method:\n" << banner << std::endl;
+
+        // lambda function to help us declare/setup the output variable once
+        // and save it to a static variable
+        auto makeOuterVars = []() {
+            // output variable ids
+            size_t out_variables[1];
+            // first var, an integer range from 1 to 2 with step of 1
+            out_variables[0] = declareOutputRange<int64_t>("meta smoother: implementation", 0, 2, 1);
+            //The second argument to make_varaible_value is a default value (starting point)
+            std::vector<KTE::VariableValue> answer_vector{
+                KTE::make_variable_value(out_variables[0], int64_t(2))
+            };
+            return answer_vector;
+        };
+
+        /*
+         * This outer loop represents the NOX main iteration...
+         */
         for (int i = 0 ; i < 300 ; i++) {
-            /* fastest_of is a helper function that will set up a round-robin search
-               with name "meta-smoother" and 3 implementations to test. */
-            fastest_of("meta-smoother", 3,
-                [&]() { metasmoother::doChebyshev(); },
-                [&]() { metasmoother::MultiThreadedGaussSeidel(); },
-                [&]() { metasmoother::TwoStageGaussSeidel(); }
-            );
+            Kokkos::Profiling::ScopedRegion region("meta smoother explicit search loop");
+
+            // create an outer tuning context
+            size_t outer_context{KTE::get_new_context_id()};
+            KTE::begin_context(outer_context);
+
+            // set the input values for the context
+            // we are just setting the context properties for the search. Enough to make it unique.
+            // we can declare this once (static), then set it when iterating
+            static std::vector<KTE::VariableValue> input_vector{
+                KTE::make_variable_value(1, "meta smoother explicit search loop")};
+            KTE::set_input_values(outer_context, input_vector.size(), input_vector.data());
+
+            // we can declare this once, then set it when iterating
+            static std::vector<KTE::VariableValue> answer_vector{makeOuterVars()};
+
+            // request new output values for the context
+            // get the settings... this will increment the search in the search space and return a suggested value.
+            // once the search has converged, you will get the same value for this context until exit.
+            KTE::request_output_values(outer_context, answer_vector.size(), answer_vector.data());
+
+            // create an inner context
+            size_t inner_context{KTE::get_new_context_id()};
+            KTE::begin_context(inner_context);
+
+            // this is just a dummy value that we will use to "evalute" the output values.
+            // we will use it as a timer when "running" the rest of the NOX solve
+            size_t delay;
+            {
+                switch(answer_vector[0].value.int_value) {
+                    case 0:
+                        // set up parameters for a Chebyshev smoother
+                        delay = metasmoother::setupChebyshev(inner_context);
+                        break;
+                    case 1:
+                        // set up parameters for a Multi-Threaded Gauss-Seidel smoother
+                        delay = metasmoother::setupMultiThreadedGaussSeidel(inner_context);
+                        break;
+                    case 2:
+                    default:
+                        // set up parameters for a Two-Stage Gauss-Seidel smoother
+                        delay = metasmoother::setupTwoStageGaussSeidel(inner_context);
+                        break;
+                }
+            }
+            // ...the assumption is that now we call the rest of the NOX code...
+            std::this_thread::sleep_for(std::chrono::microseconds(delay));
+            // ... all of the NOX iteration should be captured by BOTH contexts, the inner and the outer.
+            // that helps us evaluate the parameters for the smoother, and evaluate which smoother is the best.
+
+            // end the inner context
+            KTE::end_context(inner_context);
+
+            // end the outer context
+            KTE::end_context(outer_context);
         }
         std::cout << "done.\n" << banner << "\n" << std::endl;
     }

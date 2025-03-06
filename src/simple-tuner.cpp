@@ -670,10 +670,13 @@ void kokkosp_init_library(const int, const uint64_t, const uint32_t,
  */
 void kokkosp_finalize_library() {
     mylog() << __FUNCTION__ << std::endl;
+    std::string banner(80, '*');
+    std::cout << "Best values found:\n" << banner << std::endl;
     for (const auto& k : variables) {
         auto v = k.second;
         v->reportBest();
     }
+    std::cout << banner << std::endl;
 }
 
 
