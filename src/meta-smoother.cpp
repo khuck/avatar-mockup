@@ -167,9 +167,22 @@ namespace metasmoother {
 
 int main(int argc, char *argv[]) {
 
+    std::string banner(80, '=');
     Kokkos::initialize(argc, argv);
+    /* Report the "converged" values - keeping in mind that the random search doesn't really converge */
+    std::cout << "\nChebyshev: Degree target value: 5" << std::endl;
+    std::cout << "Chebyshev: Eigenvalue Ratio target value: 15" << std::endl;
+    std::cout << "Chebychev: Maximum Iterations target value: 75" << std::endl;
+    std::cout << "Multi-threaded Gauss-Seidel: Number of Sweeps target value: 1" << std::endl;
+    std::cout << "Multi-threaded Gauss-Seidel: Damping Factor target value: 0.9" << std::endl;
+    std::cout << "Two-Stage Gauss-Seidel: Number of Sweeps target value: 2" << std::endl;
+    std::cout << "Two-Stage Gauss-Seidel: Inner Damping Factor target value: 1.1\n" << std::endl;
+
+    /* 
+     * This implementation uses the helper function fastest_of()
+     */
     {
-        //Kokkos::print_configuration(std::cout, false);
+        std::cout << banner << "\nfastest_of() method:\n" << banner << std::endl;
         Kokkos::Profiling::ScopedRegion region("meta smoother search loop");
         for (int i = 0 ; i < 300 ; i++) {
             /* fastest_of is a helper function that will set up a round-robin search
@@ -180,15 +193,61 @@ int main(int argc, char *argv[]) {
                 [&]() { metasmoother::TwoStageGaussSeidel(); }
             );
         }
+        std::cout << "done.\n" << banner << "\n" << std::endl;
     }
-    /* Report the "converged" values - keeping in mind that the random search doesn't really converge */
-    std::cout << "\nChebyshev: Degree target value: 5" << std::endl;
-    std::cout << "Chebyshev: Eigenvalue Ratio target value: 15" << std::endl;
-    std::cout << "Chebychev: Maximum Iterations target value: 75" << std::endl;
-    std::cout << "Multi-threaded Gauss-Seidel: Number of Sweeps target value: 1" << std::endl;
-    std::cout << "Multi-threaded Gauss-Seidel: Damping Factor target value: 0.9" << std::endl;
-    std::cout << "Two-Stage Gauss-Seidel: Number of Sweeps target value: 2" << std::endl;
-    std::cout << "Two-Stage Gauss-Seidel: Inner Damping Factor target value: 1.1\n" << std::endl;
-    Kokkos::finalize();
+    /* 
+     * This implementation uses explicit function calls to set up the search.
+     */
+    {
+        std::cout << banner << "\nExplicit method:\n" << banner << std::endl;
+        // lambda function to help us declare/setup the output variable once
+        auto makeOuterVars = []() {
+            // output variable ids
+            size_t out_variables[1];
+            // first var, an integer range from 1 to 2 with step of 1
+            out_variables[0] = declareOutputRange<int64_t>("meta smoother: implementation", 0, 2, 1);
+            //The second argument to make_varaible_value is a default value (starting point)
+            std::vector<KTE::VariableValue> answer_vector{
+                KTE::make_variable_value(out_variables[0], int64_t(2))
+            };
+            return answer_vector;
+        };
 
+        Kokkos::Profiling::ScopedRegion region("meta smoother explicit search loop");
+        for (int i = 0 ; i < 300 ; i++) {
+            // create a context
+            size_t context{KTE::get_new_context_id()};
+            KTE::begin_context(context);
+
+            // set the input values for the context - these two are always on the stack,
+            // we are just setting the context properties for the search. Enough to make it unique.
+            // we can declare this once, then set it when iterating
+            static std::vector<KTE::VariableValue> input_vector{
+                KTE::make_variable_value(1, "meta smoother explicit search loop")};
+            KTE::set_input_values(context, input_vector.size(), input_vector.data());
+
+            // we can declare this once, then set it when iterating
+            static std::vector<KTE::VariableValue> answer_vector{makeOuterVars()};
+
+            // request new output values for the context
+            // get the settings... this will increment the search in the search space and return a suggested value.
+            // once the search has converged, you will get the same value for this context until exit.
+            KTE::request_output_values(context, answer_vector.size(), answer_vector.data());
+
+            switch(answer_vector[0].value.int_value) {
+                case 0:
+                    metasmoother::doChebyshev();
+                    break;
+                case 1:
+                    metasmoother::MultiThreadedGaussSeidel();
+                    break;
+                case 2:
+                default:
+                    metasmoother::TwoStageGaussSeidel();
+                    break;
+            }
+        }
+        std::cout << "done.\n" << banner << "\n" << std::endl;
+    }
+    Kokkos::finalize();
 }
