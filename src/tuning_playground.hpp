@@ -131,8 +131,6 @@ void fastest_of(const std::string& label, const size_t count, Implementations...
     end_context(context_id);
 }
 
-namespace KTE = Kokkos::Tools::Experimental;
-namespace KE = Kokkos::Experimental;
 enum schedulers{StaticSchedule, DynamicSchedule};
 static const std::string scheduleNames[] = {"static", "dynamic"};
 constexpr int lowerBound{100};
@@ -189,14 +187,14 @@ size_t declareOutputTileSize(std::string name, std::string varname, size_t limit
     std::vector<int64_t> candidates = factorsOf(limit);
     reportOptions(candidates, name);
     // create our variable object
-    KTE::VariableInfo out_info;
+    Kokkos::Tools::Experimental::VariableInfo out_info;
     // set the variable details
-    out_info.type = KTE::ValueType::kokkos_value_int64;
-    out_info.category = KTE::StatisticalCategory::kokkos_value_ordinal;
-    out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    out_info.candidates = KTE::make_candidate_set(candidates.size(),candidates.data());
+    out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
+    out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates.size(),candidates.data());
     // declare the variable
-    out_value_id = KTE::declare_output_type(varname,out_info);
+    out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,out_info);
     // return the id
     return out_value_id;
 }
@@ -207,14 +205,14 @@ size_t declareInputViewSize(std::string varname, int64_t size) {
     // create a 'vector' of value(s)
     std::vector<int64_t> candidates = {size};
     // create our variable object
-    KTE::VariableInfo in_info;
+    Kokkos::Tools::Experimental::VariableInfo in_info;
     // set the variable details
-    in_info.type = KTE::ValueType::kokkos_value_int64;
-    in_info.category = KTE::StatisticalCategory::kokkos_value_ordinal;
-    in_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    in_info.candidates = KTE::make_candidate_set(candidates.size(),candidates.data());
+    in_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    in_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
+    in_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    in_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates.size(),candidates.data());
     // declare the variable
-    in_value_id = KTE::declare_input_type(varname,in_info);
+    in_value_id = Kokkos::Tools::Experimental::declare_input_type(varname,in_info);
     // return the id
     return in_value_id;
 }
@@ -224,14 +222,14 @@ size_t declareOutputSchedules(std::string varname) {
     // create a vector of potential values
     std::vector<int64_t> candidates_schedule = {StaticSchedule,DynamicSchedule};
     // create our variable object
-    KTE::VariableInfo schedule_out_info;
+    Kokkos::Tools::Experimental::VariableInfo schedule_out_info;
     // set the variable details
-    schedule_out_info.type = KTE::ValueType::kokkos_value_int64;
-    schedule_out_info.category = KTE::StatisticalCategory::kokkos_value_categorical;
-    schedule_out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    schedule_out_info.candidates = KTE::make_candidate_set(candidates_schedule.size(),candidates_schedule.data());
+    schedule_out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    schedule_out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_categorical;
+    schedule_out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    schedule_out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates_schedule.size(),candidates_schedule.data());
     // declare the variable
-    size_t schedule_out_value_id = KTE::declare_output_type(varname,schedule_out_info);
+    size_t schedule_out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,schedule_out_info);
     // return the id
     return schedule_out_value_id;
 }
@@ -242,14 +240,14 @@ size_t declareOutputThreadCount(std::string varname, size_t limit) {
     // create a vector of potential values
     std::vector<int64_t> candidates = makeRange<int64_t>(2, limit, 2);
     // create our variable object
-    KTE::VariableInfo out_info;
+    Kokkos::Tools::Experimental::VariableInfo out_info;
     // set the variable details
-    out_info.type = KTE::ValueType::kokkos_value_int64;
-    out_info.category = KTE::StatisticalCategory::kokkos_value_categorical;
-    out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    out_info.candidates = KTE::make_candidate_set(candidates.size(),candidates.data());
+    out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_categorical;
+    out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates.size(),candidates.data());
     // declare the variable
-    out_value_id = KTE::declare_output_type(varname,out_info);
+    out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,out_info);
     // return the id
     return out_value_id;
 }
@@ -260,14 +258,14 @@ size_t declareOutputSchedules(std::string varname) {
     // create a vector of potential values
     std::vector<int64_t> candidates_schedule = {StaticSchedule,DynamicSchedule};
     // create our variable object
-    KTE::VariableInfo schedule_out_info;
+    Kokkos::Tools::Experimental::VariableInfo schedule_out_info;
     // set the variable details
-    schedule_out_info.type = KTE::ValueType::kokkos_value_int64;
-    schedule_out_info.category = KTE::StatisticalCategory::kokkos_value_ordinal;
-    schedule_out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    schedule_out_info.candidates = KTE::make_candidate_set(candidates_schedule.size(),candidates_schedule.data());
+    schedule_out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    schedule_out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
+    schedule_out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    schedule_out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates_schedule.size(),candidates_schedule.data());
     // declare the variable
-    size_t schedule_out_value_id = KTE::declare_output_type(varname,schedule_out_info);
+    size_t schedule_out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,schedule_out_info);
     // return the id
     return schedule_out_value_id;
 }
@@ -281,14 +279,14 @@ size_t declareOutputRangeInt64(const std::string varname,
     std::vector<int64_t> candidates = makeRange<int64_t>(lower, upper, step);
     reportOptions(candidates, varname);
     // create our variable object
-    KTE::VariableInfo out_info;
+    Kokkos::Tools::Experimental::VariableInfo out_info;
     // set the variable details
-    out_info.type = KTE::ValueType::kokkos_value_int64;
-    out_info.category = KTE::StatisticalCategory::kokkos_value_ordinal;
-    out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    out_info.candidates = KTE::make_candidate_set(candidates.size(),candidates.data());
+    out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+    out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
+    out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates.size(),candidates.data());
     // declare the variable
-    out_value_id = KTE::declare_output_type(varname,out_info);
+    out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,out_info);
     // return the id
     return out_value_id;
 }
@@ -301,14 +299,14 @@ size_t declareOutputRangeDouble(const std::string varname,
     std::vector<double> candidates = makeRange<double>(lower, upper, step);
     reportOptions(candidates, varname);
     // create our variable object
-    KTE::VariableInfo out_info;
+    Kokkos::Tools::Experimental::VariableInfo out_info;
     // set the variable details
-    out_info.type = KTE::ValueType::kokkos_value_double;
-    out_info.category = KTE::StatisticalCategory::kokkos_value_ordinal;
-    out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_set;
-    out_info.candidates = KTE::make_candidate_set(candidates.size(),candidates.data());
+    out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_double;
+    out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
+    out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
+    out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(candidates.size(),candidates.data());
     // declare the variable
-    out_value_id = KTE::declare_output_type(varname,out_info);
+    out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,out_info);
     // return the id
     return out_value_id;
 }
@@ -320,14 +318,14 @@ size_t declareOutputContinuous(const std::string varname,
     size_t out_value_id;
     reportOptions(varname, lower, upper, openLower, openUpper);
     // create our variable object
-    KTE::VariableInfo out_info;
+    Kokkos::Tools::Experimental::VariableInfo out_info;
     // set the variable details
-    out_info.type = KTE::ValueType::kokkos_value_double;
-    out_info.category = KTE::StatisticalCategory::kokkos_value_interval;
-    out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_range;
-    out_info.candidates = KTE::make_candidate_range(lower, upper, step, openLower, openUpper);
+    out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_double;
+    out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_interval;
+    out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_range;
+    out_info.candidates = Kokkos::Tools::Experimental::make_candidate_range(lower, upper, step, openLower, openUpper);
     // declare the variable
-    out_value_id = KTE::declare_output_type(varname,out_info);
+    out_value_id = Kokkos::Tools::Experimental::declare_output_type(varname,out_info);
     // return the id
     return out_value_id;
 }
