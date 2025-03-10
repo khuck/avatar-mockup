@@ -662,7 +662,7 @@ void kokkosp_end_context(const size_t contextId) {
  */
 void kokkosp_init_library(const int, const uint64_t, const uint32_t,
     struct Kokkos_Profiling_KokkosPDeviceInfo*) {
-    //mylog() << __FUNCTION__ << std::endl;
+    mylog() << __FUNCTION__ << std::endl;
 }
 
 /* This function will be called only once, after all other calls to
@@ -671,12 +671,17 @@ void kokkosp_init_library(const int, const uint64_t, const uint32_t,
 void kokkosp_finalize_library() {
     mylog() << __FUNCTION__ << std::endl;
     std::string banner(80, '*');
-    std::cout << "Best values found:\n" << banner << std::endl;
-    for (const auto& k : variables) {
-        auto v = k.second;
-        v->reportBest();
+    if (variables.size() == 0) {
+        std::cerr << banner << std::endl;
+        std::cerr << "No variables tuned! did you configure Kokkos with `-DKokkos_ENABLE_TUNING=TRUE`?\n" << banner << std::endl;
+    } else {
+        std::cout << "Best values found:\n" << banner << std::endl;
+        for (const auto& k : variables) {
+            auto v = k.second;
+            v->reportBest();
+        }
+        std::cout << banner << std::endl;
     }
-    std::cout << banner << std::endl;
 }
 
 
