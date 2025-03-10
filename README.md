@@ -1,6 +1,8 @@
 # avatar-mockup
 simple implementation of a dummy meta-smoother and simple tuner that uses random values.
 
+This example won't work correctly unless Kokkos is built with `-DKokkos_ENABLE_TUNING=TRUE`.
+
 To run the example, edit simple.sh to change the location of the Kokkos installation directory, and then run the simple.sh script. The meta-smoother will run 300 times so that each smoother can be "run" 100 times each, and each time the simple tuner will choose random values for each tunable parameter.
 
 Sample output:
