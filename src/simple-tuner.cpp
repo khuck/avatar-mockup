@@ -30,6 +30,10 @@
 #include <Kokkos_Core.hpp>
 #include "limits.h"
 
+#ifndef KOKKOS_ENABLE_TUNING
+#error "Error! Kokkos is not configured with tuning support. Please reconfigure and rebuild Kokkos with `-DKokkos_ENABLE_TUNING=ON`."
+#endif
+
 #if defined(__GNUC__)
 #define __FUNCTION__ __PRETTY_FUNCTION__
 #else
