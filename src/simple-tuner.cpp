@@ -290,6 +290,20 @@ public:
             }
         }
     }
+	~Variable() {
+	    if (info.category == kokkos_value_categorical ||
+                info.category == kokkos_value_ordinal) {
+		    if (info.valueQuantity == kokkos_value_set) {
+			if (info.type == kokkos_value_double) {
+			    free (info.candidates.set.values.double_value);
+			} else if (info.type == kokkos_value_int64) {
+			    free (info.candidates.set.values.int_value);
+			} else if (info.type == kokkos_value_string) {
+			    free (info.candidates.set.values.string_value);
+			}
+		    }
+	    }
+	}
 };
 
 /* Have to make a deep copy of the variable to use it at exit */
@@ -654,6 +668,7 @@ void kokkosp_end_context(const size_t contextId) {
     auto iter = contexts.find(contextId);
     auto context = iter->second;
     context->stop();
+    delete context;
     contexts.erase(contextId);
 }
 
@@ -683,9 +698,18 @@ void kokkosp_finalize_library() {
         for (const auto& k : variables) {
             auto v = k.second;
             v->reportBest();
+	    delete v;
         }
+	variables.clear();
         std::cout << banner << std::endl;
     }
+    // do cleanup
+    // Iterate through the map and delete the pointers
+    for (auto& pair : contexts) {
+        delete pair.second;
+        pair.second = nullptr; // Optional: set to nullptr to avoid dangling pointers
+    }
+    contexts.clear(); // Remove all elements from the map (now empty)
 }
 
 
