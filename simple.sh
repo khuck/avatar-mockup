@@ -1,7 +1,8 @@
 set -e
 # Build:
 
-export Kokkos_ROOT=$HOME/src/albany/trilinos-install
+#export Kokkos_ROOT=$HOME/src/albany/trilinos-install
+export Kokkos_ROOT=$HOME/src/kokkos/install
 #export Kokkos_ROOT=$HOME/src/apex-kokkos-tuning/install
 #export Kokkos_ROOT=/Users/khuck/spack/opt/spack/darwin-sequoia-m1/apple-clang-16.0.0/kokkos-4.5.00-4xk5w5d7dkayb2hcf27xq5kbep77wom7
 cmake -DCMAKE_PREFIX_PATH=$Kokkos_ROOT -B build -DCMAKE_BUILD_TYPE=Debug
@@ -18,5 +19,6 @@ elif [ -f ./build/src/libsimple-tuner.dylib ] ; then
 fi
 
 #./build/src/meta-smoother
+export ASAN_OPTIONS=verbosity=1:detect_stack_use_after_return=1:detect_leaks=1
 ./build/src/meta-smoother-discrete
 
