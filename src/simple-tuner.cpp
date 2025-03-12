@@ -666,10 +666,12 @@ void kokkosp_request_values(
 void kokkosp_end_context(const size_t contextId) {
     mylog() << __FUNCTION__ << "\t" << contextId << std::endl;
     auto iter = contexts.find(contextId);
-    auto context = iter->second;
-    context->stop();
-    delete context;
-    contexts.erase(contextId);
+    if (iter != contexts.end()) {
+    	auto context = iter->second;
+    	context->stop();
+    	delete context;
+    	contexts.erase(contextId);
+    }
 }
 
 /* This function will be called only once, prior to calling any other hooks

@@ -1,17 +1,19 @@
 set -e
 # Build:
 
+#rm -rf build
 #export Kokkos_ROOT=$HOME/src/albany/trilinos-install
 export Kokkos_ROOT=$HOME/src/kokkos/install
 #export Kokkos_ROOT=$HOME/src/apex-kokkos-tuning/install
 #export Kokkos_ROOT=/Users/khuck/spack/opt/spack/darwin-sequoia-m1/apple-clang-16.0.0/kokkos-4.5.00-4xk5w5d7dkayb2hcf27xq5kbep77wom7
-cmake -DCMAKE_PREFIX_PATH=$Kokkos_ROOT -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -DCMAKE_PREFIX_PATH=$Kokkos_ROOT -B build -DCMAKE_BUILD_TYPE=Debug 
 cmake --build build --parallel
 
 # Run:
 
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
+export OMP_NUM_THREADS=14
 if [ -f ./build/src/libsimple-tuner.so ] ; then
     export KOKKOS_TOOLS_LIBS=./build/src/libsimple-tuner.so
 elif [ -f ./build/src/libsimple-tuner.dylib ] ; then
@@ -19,6 +21,8 @@ elif [ -f ./build/src/libsimple-tuner.dylib ] ; then
 fi
 
 #./build/src/meta-smoother
+export KOKKOS_VERBOSE=1
 export ASAN_OPTIONS=verbosity=1:detect_stack_use_after_return=1:detect_leaks=1
-./build/src/meta-smoother-discrete
+gdb --args ./build/src/meta-smoother-discrete --kokkos-tune-internals
+#./build/src/meta-smoother-discrete --kokkos-tune-internals
 

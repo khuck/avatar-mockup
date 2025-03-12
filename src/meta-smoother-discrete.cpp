@@ -147,6 +147,29 @@ namespace metasmoother {
     }
 };
 
+void runKernel(void) {
+  constexpr const int data_size = 16;
+  using view_type =
+    Kokkos::View<float **, Kokkos::DefaultExecutionSpace::memory_space>;
+
+    view_type left("left_inp", data_size, data_size);
+    view_type right("right_inp", data_size, data_size);
+    view_type output("output", data_size, data_size);
+
+    Kokkos::Profiling::ScopedRegion region("mdrange_gemm search loop");
+    Kokkos::parallel_for(
+        "mdrange_gemm",
+        Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace,
+          Kokkos::Rank<2>>(
+          {0, 0}, {data_size, data_size}),
+        KOKKOS_LAMBDA(const int x, const int y) {
+          for (int z = 0; z < data_size; ++z) {
+              output(x, y) += left(x, z) * right(z, y);
+          }
+        }
+    );
+}
+
 int main(int argc, char *argv[]) {
 
     /* Report the "target" values - keeping in mind that the random search doesn't really converge */
@@ -162,6 +185,7 @@ int main(int argc, char *argv[]) {
     std::cout << target << "\n" << std::endl;
 
     Kokkos::initialize(argc, argv);
+    Kokkos::print_configuration(std::cout, false);
     /* 
      * This implementation uses explicit function calls to set up the search.
      */
@@ -220,6 +244,8 @@ int main(int argc, char *argv[]) {
                     case 0:
                         // set up parameters for a Chebyshev smoother
                         delay = metasmoother::setupChebyshev(inner_context);
+	    		// just for fun, let's call a kernel!
+	    		runKernel();
                         break;
                     case 1:
                         // set up parameters for a Multi-Threaded Gauss-Seidel smoother
@@ -236,6 +262,7 @@ int main(int argc, char *argv[]) {
             std::this_thread::sleep_for(std::chrono::microseconds(delay));
             // ... all of the NOX iteration should be captured by BOTH contexts, the inner and the outer.
             // that helps us evaluate the parameters for the smoother, and evaluate which smoother is the best.
+	    std::cout << "." << std::flush;
 
             // end the inner context
             KTE::end_context(inner_context);
