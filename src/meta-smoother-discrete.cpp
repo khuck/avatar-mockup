@@ -147,28 +147,6 @@ namespace metasmoother {
     }
 };
 
-void runKernel(void) {
-  constexpr const int data_size = 16;
-  using view_type =
-    Kokkos::View<float **, Kokkos::DefaultExecutionSpace::memory_space>;
-
-    view_type left("left_inp", data_size, data_size);
-    view_type right("right_inp", data_size, data_size);
-    view_type output("output", data_size, data_size);
-
-    Kokkos::Profiling::ScopedRegion region("mdrange_gemm search loop");
-    Kokkos::parallel_for(
-        "mdrange_gemm",
-        Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace,
-          Kokkos::Rank<2>>(
-          {0, 0}, {data_size, data_size}),
-        KOKKOS_LAMBDA(const int x, const int y) {
-          for (int z = 0; z < data_size; ++z) {
-              output(x, y) += left(x, z) * right(z, y);
-          }
-        }
-    );
-}
 
 int main(int argc, char *argv[]) {
 
@@ -185,7 +163,7 @@ int main(int argc, char *argv[]) {
     std::cout << target << "\n" << std::endl;
 
     Kokkos::initialize(argc, argv);
-    Kokkos::print_configuration(std::cout, false);
+    //Kokkos::print_configuration(std::cout, false);
     /* 
      * This implementation uses explicit function calls to set up the search.
      */
@@ -206,6 +184,19 @@ int main(int argc, char *argv[]) {
             };
             return answer_vector;
         };
+
+      constexpr const int data_size = 16;
+      using view_type_2d =
+            Kokkos::View<float **, Kokkos::DefaultExecutionSpace::memory_space>;
+      using view_type_1d =
+            Kokkos::View<float *, Kokkos::DefaultExecutionSpace::memory_space>;
+
+        view_type_2d left("left_inp", data_size, data_size);
+        view_type_2d right("right_inp", data_size, data_size);
+        view_type_2d output("output", data_size, data_size);
+        view_type_1d a("a", data_size * data_size);
+        view_type_1d b("b", data_size * data_size);
+        view_type_1d c("c", data_size * data_size);
 
         /*
          * This outer loop represents the NOX main iteration...
@@ -244,17 +235,66 @@ int main(int argc, char *argv[]) {
                     case 0:
                         // set up parameters for a Chebyshev smoother
                         delay = metasmoother::setupChebyshev(inner_context);
-	    		// just for fun, let's call a kernel!
-	    		runKernel();
+			if (Kokkos::tune_internals()) {
+                // just for fun, let's call a kernel!
+                Kokkos::parallel_for(
+                    "mdrange_gemm",
+                    Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace,
+                      Kokkos::Rank<2>>(
+                      {0, 0}, {data_size, data_size}),
+                    KOKKOS_LAMBDA(const int x, const int y) {
+                      for (int z = 0; z < data_size; ++z) {
+                          output(x, y) += left(x, z) * right(z, y);
+                      }
+                    }
+                );
+  Kokkos::fence();
+        std::cout << "M" << std::flush;
+			}
                         break;
                     case 1:
                         // set up parameters for a Multi-Threaded Gauss-Seidel smoother
                         delay = metasmoother::setupMultiThreadedGaussSeidel(inner_context);
+			if (Kokkos::tune_internals()) {
+            // just for fun, run a team kernel
+              using team_policy =
+              Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+              using team_member = team_policy::member_type;
+              Kokkos::parallel_for(
+              "bad_team_gemm",
+              team_policy(data_size * data_size, Kokkos::AUTO,
+                      Kokkos::AUTO),
+              KOKKOS_LAMBDA(const team_member &member) {
+                auto index = member.league_rank();
+                auto x = index % data_size;
+                auto y = index / data_size;
+                float sum = 0;
+                Kokkos::parallel_reduce(
+                Kokkos::ThreadVectorRange(member, data_size),
+                [&](int &i, float &lsum) {
+                  lsum += left(x, i) * right(i, y);
+                },
+                sum);
+                output(x, y) = sum;
+              });
+  Kokkos::fence();
+        std::cout << "T" << std::flush;
+			}
                         break;
                     case 2:
                     default:
                         // set up parameters for a Two-Stage Gauss-Seidel smoother
                         delay = metasmoother::setupTwoStageGaussSeidel(inner_context);
+			if (Kokkos::tune_internals()) {
+			// let's run a kernel!
+              using range_policy =
+              Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>;
+  Kokkos::parallel_for(
+      "add", range_policy(0, a.extent(0)),
+      KOKKOS_LAMBDA(const int i) { c[i] = a[i] + b[i]; });
+  Kokkos::fence();
+        std::cout << "R" << std::flush;
+			}
                         break;
                 }
             }
@@ -262,7 +302,6 @@ int main(int argc, char *argv[]) {
             std::this_thread::sleep_for(std::chrono::microseconds(delay));
             // ... all of the NOX iteration should be captured by BOTH contexts, the inner and the outer.
             // that helps us evaluate the parameters for the smoother, and evaluate which smoother is the best.
-	    std::cout << "." << std::flush;
 
             // end the inner context
             KTE::end_context(inner_context);
